@@ -13,17 +13,6 @@ if __name__ == '__main__':
     db.Base.metadata.create_all(db.engine)
 
 
-bot_data = {}
-
-# register
-
-
-class Record:
-    def __init__(self):
-        self.email = None
-        self.vehicles = None
-
-
 @bot.message_handler(commands=['register'])
 def on_command_menu(message):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)

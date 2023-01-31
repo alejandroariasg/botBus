@@ -1,5 +1,6 @@
 import database.db as db
-from sqlalchemy import Column, Integer, ForeignKey, relationship
+from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy.orm import relationship
 
 class FluidCheck(db.Base):
     __tablename__ = 'fluid_check'

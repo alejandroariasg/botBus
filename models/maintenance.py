@@ -1,5 +1,5 @@
 import database.db as db
-from sqlalchemy import Column, DateTime, String, ARRAY, func, Float, Integer, ForeignKey
+from sqlalchemy import Column, DateTime, String,  func, Float, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
 
@@ -8,9 +8,9 @@ class Maintenance(db.Base):
     id = Column('id', Integer, primary_key=True, nullable=False)
     description = Column('description', String, nullable=True)
     date = Column('date', DateTime, server_default=func.now(), nullable=False)
-    spare_parts = Column('spare_parts', ARRAY(String), nullable=True)
+    spare_parts = Column('spare_parts', String, nullable=True)
     fluid_check = relationship(
-        'FluidCheck', back_populates='maintenance', nullable=True)
+        'FluidCheck', back_populates='maintenance')
 
     mechanic_id = Column(Float, ForeignKey("mechanic.id"))
     mechanic = relationship("Mechanic", back_populates="maintenances")
