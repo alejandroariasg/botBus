@@ -3,10 +3,71 @@ import config
 from time import sleep
 import re
 import database.db as db
+import logic
+
+from telebot import types
+from time import sleep
+
 
 if __name__ == '__main__':
     db.Base.metadata.create_all(db.engine)
 
+
+bot_data = {}
+
+# register
+
+
+class Record:
+    def __init__(self):
+        self.email = None
+        self.vehicles = None
+
+
+@bot.message_handler(commands=['register'])
+def on_command_menu(message):
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    itembtn1 = types.KeyboardButton('/register_owner')
+    itembtn2 = types.KeyboardButton('/register_mechanic')
+    markup.add(itembtn1, itembtn2)
+    bot.send_message(
+        message.chat.id, "Selecciona una opción del menú:", reply_markup=markup)
+
+
+# coger id del mensaje y buscar en la table del tipo ingresado, si no existe, el usuario no esta registrado
+@bot.message_handler(regexp=r"^(start|str) (owner|mechanic)")
+def on_command_start(message):
+
+    types = {
+        "owner": logic.find_owner,
+        "mechanic": logic.find_mechanic
+    }
+
+    parts = re.match(
+        r"^^(start|str) (owner|mechanic))",
+        message.text,
+        flags=re.IGNORECASE)
+
+    oper1 = float(parts[1])
+    oper2 = float(parts[3])
+
+    types[oper2](message.chat.id)
+
+
+
+@bot.message_handler(commands=['register_mechanic'])
+def on_command_imc(message):
+    response = bot.reply_to(message, "ingrese el telefono")
+    bot.register_next_step_handler(response, save_mechanic)
+
+
+def save_mechanic(message):
+    try:
+        print(message)
+        mechanic = int(message.text)
+        logic.register_mechanic(message.chat.id, mechanic)
+    except Exception as e:
+        bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
 
 @bot.message_handler(commands=['start'])
@@ -29,6 +90,7 @@ def on_command_start(message):
         response,
         parse_mode="Markdown")
 
+
 @bot.message_handler(commands=['help'])
 def on_command_help(message):
     bot.send_chat_action(message.chat.id, 'typing')
@@ -47,7 +109,33 @@ def on_command_help(message):
         message.chat.id,
         response,
         parse_mode="Markdown"
-    ) 
+    )
+
+
+@bot.message_handler(regexp=r"^(register owner|ro) ([a-z0-9])")
+def on_add(message):
+    bot.send_chat_action(message.chat.id, 'typing')
+    sleep(1)
+
+    parts = re.match(
+        r"^(register owner | ro) ([a-z0-9]+[@]\w+[.]\w{2,3}$)",
+        message.text,
+        flags=re.IGNORECASE)
+
+    print(parts.groups())
+
+    oper1 = float(parts[1])
+    oper2 = float(parts[3])
+
+    result = oper1 + oper2
+
+    bot.reply_to(
+        message,
+        "Prueba"
+    )
+
+# 3
+
 
 @bot.message_handler(func=lambda message: True)
 def on_fallback(message):
@@ -56,6 +144,7 @@ def on_fallback(message):
     bot.reply_to(
         message,
         "\U0001F63F Ups, no entendí lo que me dijiste.")
+
 
 #########################################################
 if __name__ == '__main__':
