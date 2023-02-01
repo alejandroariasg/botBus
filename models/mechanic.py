@@ -7,7 +7,7 @@ class Mechanic(db.Base):
     __tablename__ = 'mechanic'
     id = Column('id', String, primary_key=True, nullable=False, unique=True)
     phone = Column('phone', Integer, server_default='0', nullable=False)
-    maintenances = relationship('Maintenance', back_populates='mechanic')
+    reviews = relationship('Review', back_populates='mechanic')
 
     def __init__(self, id, phone):
         self.id = id

@@ -7,10 +7,13 @@ import logic
 
 from telebot import types
 from time import sleep
-
+from record import Record
+record = Record()
 
 if __name__ == '__main__':
     db.Base.metadata.create_all(db.engine)
+
+# Hello handler
 
 
 @bot.message_handler(commands=['start'])
@@ -55,6 +58,8 @@ def on_command_help(message):
         response,
         parse_mode="Markdown"
     )
+
+# Register
 
 
 @bot.message_handler(commands=['register'])
@@ -107,8 +112,42 @@ def save_mechanic(message):
     except Exception as e:
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
+# Registrar revision
+
+
+@bot.message_handler(commands=['register_review'])
+def register_review(message):
+    response = bot.reply_to(message, "Ingrese los detalles de la revision")
+    bot.register_next_step_handler(response, review_description)
+
+
+def review_description(message):
+    response = bot.reply_to(
+        message, "Ingrese los repuestos utilizados separados por coma")
+    record.review["description"] = message.text
+    bot.register_next_step_handler(response, review_spare_parts)
+
+
+def review_spare_parts(message):
+    response = bot.reply_to(message, "Ingrese la placa del vehiculo")
+    record.review["spare_parts"] = message.text
+    bot.register_next_step_handler(response, review_vehicle)
+
+
+def review_vehicle(message):
+    record.review["vehicle_id"] = message.text
+    record.review["user_id"] = message.chat.id
+    try:
+        transaction = logic.register_review(**record.review)
+        bot.reply_to(
+            message, transaction)
+    except Exception as e:
+        bot.reply_to(message, f"Algo terrible sucedió: {e}")
+
 
 # Registrar owner
+
+
 @bot.message_handler(regexp=r"^(register owner|ro) ([a-z0-9])")
 def on_add(message):
     bot.send_chat_action(message.chat.id, 'typing')

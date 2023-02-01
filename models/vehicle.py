@@ -8,7 +8,7 @@ class Vehicle(db.Base):
     id = Column('id', String(6), primary_key=True, nullable=False)
     model = Column('model', Integer,  nullable=True)
     mark = Column('mark', String(15), server_default='', nullable=True)
-    maintenances = relationship('Maintenance', back_populates='vehicle')
+    reviews = relationship('Review', back_populates='vehicle')
     insurances = relationship('Insurance', back_populates='vehicle')
     owner_id = Column(Float, ForeignKey("owner.id"))
     owner = relationship("Owner", back_populates="vehicles")
