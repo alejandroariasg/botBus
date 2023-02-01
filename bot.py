@@ -13,6 +13,50 @@ if __name__ == '__main__':
     db.Base.metadata.create_all(db.engine)
 
 
+@bot.message_handler(commands=['start'])
+def on_command_start(message):
+    bot.send_chat_action(message.chat.id, 'typing')
+    sleep(0.6)
+    response = ()
+    is_loged_user = logic.login_user(message.chat.id)
+    if (is_loged_user):
+        response = (
+            "Hola, soy un \U0001F916, de la empresa BotBus \U0001F68D \U0001F699 \n"
+            "Bienvenido, eres un {}".format(is_loged_user)
+        )
+    else:
+        response = (
+            "Hola, soy un \U0001F916, de la empresa BotBus \U0001F68D \U0001F699 \n"
+            "Aun no te has registrado"
+            "*/register* - Muestra menu de registro"
+        )
+
+    bot.send_message(
+        message.chat.id,
+        response,
+        parse_mode="Markdown")
+
+
+@bot.message_handler(commands=['help'])
+def on_command_help(message):
+    bot.send_chat_action(message.chat.id, 'typing')
+    sleep(1)
+    response = (
+        "Estos son los comandos y órdenes disponibles:\n"
+        "\n"
+        "*/start* - Inicia la interacción con el bot\n"
+        "*/help* - Muestra este mensaje de ayuda\n"
+        "*/register* - Muestra menu de registro"
+        "*/register_mechanic {mechanic_phone}* - Registrar un nuevo usuario\n"
+
+    )
+    bot.send_message(
+        message.chat.id,
+        response,
+        parse_mode="Markdown"
+    )
+
+
 @bot.message_handler(commands=['register'])
 def on_command_menu(message):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
@@ -37,16 +81,15 @@ def on_command_start(message):
         message.text,
         flags=re.IGNORECASE)
 
-    oper1 = float(parts[1])
     oper2 = float(parts[3])
 
     types[oper2](message.chat.id)
 
 
-
+# Registrar mecanico
 @bot.message_handler(commands=['register_mechanic'])
 def on_command_imc(message):
-    response = bot.reply_to(message, "ingrese el telefono")
+    response = bot.reply_to(message, "ingrese el telefono del mecanico")
     bot.register_next_step_handler(response, save_mechanic)
 
 
@@ -54,53 +97,18 @@ def save_mechanic(message):
     try:
         print(message)
         mechanic = int(message.text)
-        logic.register_mechanic(message.chat.id, mechanic)
+        success_transaction = logic.register_mechanic(
+            message.chat.id, mechanic)
+        if (success_transaction):
+            bot.reply_to(message, f"Mecanico agregado exitosamente")
+        else:
+            bot.reply_to(
+                message, f"El mecanico ya ha sido agregado con anterioridad")
     except Exception as e:
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
 
-@bot.message_handler(commands=['start'])
-def on_command_start(message):
-    bot.send_chat_action(message.chat.id, 'typing')
-    sleep(1)
-    response = (
-        "Hola, soy un \U0001F916, de la empresa BotBus \U0001F68D \U0001F699 \n"
-        "Estos son los comandos y órdenes disponibles:\n"
-        "\n"
-        "*/start* - Inicia la interacción con el bot\n"
-        "*/help* - Muestra este mensaje de ayuda\n"
-        "*registraru {valor1} y {valor2}* - Registrar un nuevo usuario\n"
-        "*regitrarv {valor1} y {valor2}* - Registrar vehiculo\n"
-        "*registrarm {valor1} y {valor2}* - Registrar mantenimiento\n"
-        "*consultamatenimientos {valor1} y {valor2}* - Consultar los mantenimientos realizados\n"
-    )
-    bot.send_message(
-        message.chat.id,
-        response,
-        parse_mode="Markdown")
-
-
-@bot.message_handler(commands=['help'])
-def on_command_help(message):
-    bot.send_chat_action(message.chat.id, 'typing')
-    sleep(1)
-    response = (
-        "Estos son los comandos y órdenes disponibles:\n"
-        "\n"
-        "*/start* - Inicia la interacción con el bot\n"
-        "*/help* - Muestra este mensaje de ayuda\n"
-        "*registraru {valor1} y {valor2}* - Registrar un nuevo usuario\n"
-        "*regitrarv {valor1} y {valor2}* - Registrar vehiculo\n"
-        "*registrarm {valor1} y {valor2}* - Registrar mantenimiento\n"
-        "*consultamatenimientos {valor1} y {valor2}* - Consultar los mantenimientos realizados\n"
-    )
-    bot.send_message(
-        message.chat.id,
-        response,
-        parse_mode="Markdown"
-    )
-
-
+# Registrar owner
 @bot.message_handler(regexp=r"^(register owner|ro) ([a-z0-9])")
 def on_add(message):
     bot.send_chat_action(message.chat.id, 'typing')
