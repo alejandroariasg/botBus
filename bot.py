@@ -51,6 +51,7 @@ def on_command_help(message):
         "*/help* - Muestra este mensaje de ayuda\n"
         "*/register* - Muestra menu de registro"
         "*/register_mechanic {mechanic_phone}* - Registrar un nuevo usuario\n"
+        "*/register_owner {owner_email}* - Registrar un nuevo owner\n"
 
     )
     bot.send_message(
@@ -112,9 +113,33 @@ def save_mechanic(message):
     except Exception as e:
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
+#Registrar Owner
+@bot.message_handler(commands=['register_owner'])
+def on_command_imc(message):
+    response = bot.reply_to(message, "Ingrese el email del owner")
+    bot.register_next_step_handler(response, save_owner)
+
+
+def save_owner(message):
+    try:
+        print(message)
+        
+        if re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', message.text):
+            owner = (message.text)
+            success_transaction = logic.register_owner(
+                message.chat.id, owner)
+            if (success_transaction):
+                bot.reply_to(message, f"Owner agregado exitosamente")
+            else:
+                bot.reply_to(
+                    message, f"El owner ya ha sido agregado con anterioridad")
+        else:
+            bot.reply_to(
+                message, f"El email ingresado no es valido")
+    except Exception as e:
+        bot.reply_to(message, f"Algo terrible sucedió: {e}")
+
 # Registrar revision
-
-
 @bot.message_handler(commands=['register_review'])
 def register_review(message):
     response = bot.reply_to(message, "Ingrese los detalles de la revision")

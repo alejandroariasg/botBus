@@ -65,3 +65,14 @@ def register_review(description, spare_parts, vehicle_id):
         db.session.commit()
         return "Revision registrada con exito"
     return "El vehiculo no se encuentra registrado"
+
+
+def register_owner(user_id, email):
+    owner = db.session.query(Owner).get(user_id)
+    db.session.commit()
+    if owner == None:
+        owner = Owner(user_id, email)
+        db.session.add(owner)
+        db.session.commit()
+        return True
+    return False
