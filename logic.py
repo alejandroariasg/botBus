@@ -76,3 +76,13 @@ def register_owner(user_id, email):
         db.session.commit()
         return True
     return False
+
+def register_vehicle(id, model, mark, id_owner):
+    owner = db.session.query(Owner).get(id_owner)
+    if(owner):    
+        vehicle = Vehicle(id, model, mark, id_owner)
+        db.session.add(vehicle)
+        db.session.commit()
+        return "Vehículo registrado exitosamente."
+    return "El owner no exite. Debes primero registrar este."
+

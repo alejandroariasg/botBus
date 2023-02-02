@@ -139,6 +139,42 @@ def save_owner(message):
     except Exception as e:
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
+#Registrar Vehiculo
+@bot.message_handler(commands=['register_vehicle'])
+def on_command_imc(message):
+    response = bot.reply_to(message, "Ingrese la placa del vehiculo")
+    bot.register_next_step_handler(response, vehicle_id)
+
+def vehicle_id(message):
+    response = bot.reply_to(
+        message, "Ingrese el modelo del vehiculo")
+    record.vehicle["id"] = message.text
+    bot.register_next_step_handler(response, vehicle_model)
+
+
+def vehicle_model(message):
+    response = bot.reply_to(
+        message, "Ingrese la marca del vehiculo")
+    record.vehicle["model"] = int(message.text)
+    bot.register_next_step_handler(response, vehicle_mark)
+
+
+def vehicle_mark(message):
+    response = bot.reply_to(
+        message, "Ingrese el ID del owner")
+    record.vehicle["mark"] = message.text
+    bot.register_next_step_handler(response, vehicle_owner)
+
+def vehicle_owner(message):
+    record.vehicle["id_owner"] = int(message.text)
+    try:
+        transaction = logic.register_vehicle(**record.vehicle)
+        bot.reply_to(
+            message, transaction)
+    except Exception as e:
+        bot.reply_to(message, f"Algo terrible sucedió: {e}")
+
+
 # Registrar revision
 @bot.message_handler(commands=['register_review'])
 def register_review(message):
@@ -168,9 +204,6 @@ def review_vehicle(message):
             message, transaction)
     except Exception as e:
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
-
-
-# Registrar owner
 
 
 @bot.message_handler(regexp=r"^(register owner|ro) ([a-z0-9])")
