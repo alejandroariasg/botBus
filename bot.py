@@ -213,20 +213,7 @@ def review_vehicle(message):
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
 
-@bot.message_handler(regexp=r"^(register owner|ro) ([a-z0-9])")
-def on_add(message):
-    bot.send_chat_action(message.chat.id, 'typing')
-    sleep(1)
 
-    parts = re.match(
-        r"^(register owner | ro) ([a-z0-9]+[@]\w+[.]\w{2,3}$)",
-        message.text,
-        flags=re.IGNORECASE)
-
-    print(parts.groups())
-
-    oper1 = float(parts[1])
-    oper2 = float(parts[3])
 def with_check_fluids():
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     itembtn1 = types.KeyboardButton('Si')
@@ -235,10 +222,8 @@ def with_check_fluids():
 
     return markup
 
-
 def check_fluids(message):
     print(message.text)
-
 
 # Default response
 @bot.message_handler(func=lambda message: True)
