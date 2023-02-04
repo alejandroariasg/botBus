@@ -13,9 +13,24 @@ record = Record()
 if __name__ == '__main__':
     db.Base.metadata.create_all(db.engine)
 
+
+# Auth
+def auth_middleware(user_types):
+    def wrapper(func):
+        def innerr(*args, **kwargs):
+            user_id = args[0].chat.id
+            ok_login = logic.login_user(user_id)
+            if (not ok_login or ok_login not in user_types):
+                return bot.send_message(
+                    user_id,
+                    "No tienes acceso a estos datos o aun no te registras",
+                    parse_mode="Markdown")
+            return func(*args, **kwargs)
+        return innerr
+    return wrapper
+
+
 # Hello handler
-
-
 @bot.message_handler(commands=['start'])
 def on_command_start(message):
     bot.send_chat_action(message.chat.id, 'typing')
@@ -50,7 +65,7 @@ def on_command_help(message):
         "*/start* - Inicia la interacción con el bot\n"
         "*/help* - Muestra este mensaje de ayuda\n"
         "*/register* - Muestra menu de registro"
-        "*/register_mechanic {mechanic_phone}* - Registrar un nuevo usuario\n"
+        "*/register_mechanic {mechanic_phone}* - Registrar un nuevo mecanico\n"
         "*/register_owner {owner_email}* - Registrar un nuevo owner\n"
 
     )
@@ -60,9 +75,8 @@ def on_command_help(message):
         parse_mode="Markdown"
     )
 
-# Register
 
-
+# Registrar
 @bot.message_handler(commands=['register'])
 def on_command_menu(message):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
@@ -71,25 +85,6 @@ def on_command_menu(message):
     markup.add(itembtn1, itembtn2)
     bot.send_message(
         message.chat.id, "Selecciona una opción del menú:", reply_markup=markup)
-
-
-# coger id del mensaje y buscar en la table del tipo ingresado, si no existe, el usuario no esta registrado
-@bot.message_handler(regexp=r"^(start|str) (owner|mechanic)")
-def on_command_start(message):
-
-    types = {
-        "owner": logic.find_owner,
-        "mechanic": logic.find_mechanic
-    }
-
-    parts = re.match(
-        r"^^(start|str) (owner|mechanic))",
-        message.text,
-        flags=re.IGNORECASE)
-
-    oper2 = float(parts[3])
-
-    types[oper2](message.chat.id)
 
 
 # Registrar mecanico
@@ -113,7 +108,8 @@ def save_mechanic(message):
     except Exception as e:
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
-#Registrar Owner
+
+# Registrar Owner
 @bot.message_handler(commands=['register_owner'])
 def on_command_imc(message):
     response = bot.reply_to(message, "Ingrese el email del owner")
@@ -123,7 +119,7 @@ def on_command_imc(message):
 def save_owner(message):
     try:
         print(message)
-        
+
         if re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', message.text):
             owner = (message.text)
             success_transaction = logic.register_owner(
@@ -177,6 +173,7 @@ def vehicle_owner(message):
 
 # Registrar revision
 @bot.message_handler(commands=['register_review'])
+@auth_middleware(user_types=['mechanic'])
 def register_review(message):
     response = bot.reply_to(message, "Ingrese los detalles de la revision")
     bot.register_next_step_handler(response, review_description)
@@ -199,9 +196,19 @@ def review_vehicle(message):
     record.review["vehicle_id"] = message.text
     record.review["user_id"] = message.chat.id
     try:
-        transaction = logic.register_review(**record.review)
-        bot.reply_to(
-            message, transaction)
+        is_success_transaction = logic.register_review(**record.review)
+        if (is_success_transaction):
+            markup = with_check_fluids()
+            response = bot.reply_to(
+                message,
+                "Se ha registrado la revision con exito, desea agregar revision de liquidos?",
+                reply_markup=markup
+            )
+            bot.register_next_step_handler(response, check_fluids)
+        else:
+            bot.send_message(
+                message, "Ocurrio un error, posiblemente no estes registrado o el vehiculo no existe")
+
     except Exception as e:
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
@@ -220,17 +227,20 @@ def on_add(message):
 
     oper1 = float(parts[1])
     oper2 = float(parts[3])
+def with_check_fluids():
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    itembtn1 = types.KeyboardButton('Si')
+    itembtn2 = types.KeyboardButton('No')
+    markup.add(itembtn1, itembtn2)
 
-    result = oper1 + oper2
-
-    bot.reply_to(
-        message,
-        "Prueba"
-    )
-
-# 3
+    return markup
 
 
+def check_fluids(message):
+    print(message.text)
+
+
+# Default response
 @bot.message_handler(func=lambda message: True)
 def on_fallback(message):
     bot.send_chat_action(message.chat.id, 'typing')
@@ -240,7 +250,5 @@ def on_fallback(message):
         "\U0001F63F Ups, no entendí lo que me dijiste.")
 
 
-#########################################################
 if __name__ == '__main__':
     bot.polling(timeout=20)
-#########################################################
