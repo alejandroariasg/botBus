@@ -49,9 +49,10 @@ def on_command_help(message):
         "\n"
         "*/start* - Inicia la interacción con el bot\n"
         "*/help* - Muestra este mensaje de ayuda\n"
-        "*/register* - Muestra menu de registro"
+        "*/register* - Muestra menu de registro\n"
         "*/register_mechanic {mechanic_phone}* - Registrar un nuevo usuario\n"
         "*/register_owner {owner_email}* - Registrar un nuevo owner\n"
+        "*/register_vehicle {vehicle}* - Registrar un nuevo vehículo\n"
 
     )
     bot.send_message(
