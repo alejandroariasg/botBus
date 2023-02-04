@@ -67,6 +67,7 @@ def on_command_help(message):
         "*/register* - Muestra menu de registro"
         "*/register_mechanic {mechanic_phone}* - Registrar un nuevo mecanico\n"
         "*/register_owner {owner_email}* - Registrar un nuevo owner\n"
+        "*/register_vehicle {vehicle}* - Registrar un nuevo vehículo\n"
 
     )
     bot.send_message(
