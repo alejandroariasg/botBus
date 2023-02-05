@@ -8,14 +8,12 @@ class Insurance(db.Base):
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     validity = Column('validity', Integer, nullable=False)
     date = Column('date', DateTime, server_default=func.now(), nullable=False)
-    vehicle_id = Column(String(6), ForeignKey("vehicle.id"))
+    vehicle_id = Column('vehicle_id',String(6), ForeignKey("vehicle.id"))
     vehicle = relationship("Vehicle", back_populates="insurances")
 
-    def __init__(self, id, validity, date, vehicle_id):
-        self.id = id
+    def __init__(self, validity, vehicle):
         self.validity = validity
-        self.date = date
-        self.vehicle_id = vehicle_id
+        self.vehicle = vehicle
 
     def __repr__(self):
         return f"<Insurance {self.id}>"

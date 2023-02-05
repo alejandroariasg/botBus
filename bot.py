@@ -4,11 +4,18 @@ from time import sleep
 import re
 import database.db as db
 import logic
+from models.review import Review
+from telebot.types import ForceReply # para citar mensajes
+from telebot.types import ReplyKeyboardMarkup # para crear botones
+from datetime import date
+from telebot.types import ReplyKeyboardRemove # remover botones del chat
 
 from telebot import types
 from time import sleep
 from record import Record
 record = Record()
+
+insurance_temp = {}
 
 if __name__ == '__main__':
     db.Base.metadata.create_all(db.engine)
@@ -38,14 +45,30 @@ def on_command_start(message):
     response = ()
     is_loged_user = logic.login_user(message.chat.id)
     if (is_loged_user):
-        response = (
-            "Hola, soy un \U0001F916, de la empresa BotBus \U0001F68D \U0001F699 \n"
-            "Bienvenido, eres un {}".format(is_loged_user)
-        )
+        if is_loged_user == "owner":
+            response = (
+                "Hola, soy un \U0001F916, de la empresa BotBus \U0001F68D \U0001F699 \n"
+                f"Bienvenido, eres un {is_loged_user}\n"
+                "\n"
+                "Estos son los comandos y órdenes disponibles:\n"
+                "\n"
+                "*/register_insurarse* - Registrar seguro de vehiculos\n"
+                "*/consult_reviews* - Consultar historial de revisiones\n"
+                "*/consult_vehicle_information* - Consultar información vehiculos\n"
+                "\n"
+               # "Bienvenido, eres un {}".format(is_loged_user)
+                
+            )
+        else:
+            response = (
+                "Hola, soy un \U0001F916, de la empresa BotBus \U0001F68D \U0001F699 \n"
+                "Bienvenido, eres un {}".format(is_loged_user)
+            )
+
     else:
         response = (
             "Hola, soy un \U0001F916, de la empresa BotBus \U0001F68D \U0001F699 \n"
-            "Aun no te has registrado"
+            "Aun no te has registrado\n"
             "*/register* - Muestra menu de registro"
         )
 
@@ -96,18 +119,24 @@ def on_command_imc(message):
 
 
 def save_mechanic(message):
-    try:
-        print(message)
-        mechanic = int(message.text)
-        success_transaction = logic.register_mechanic(
-            message.chat.id, mechanic)
-        if (success_transaction):
-            bot.reply_to(message, f"Mecanico agregado exitosamente")
-        else:
-            bot.reply_to(
-                message, f"El mecanico ya ha sido agregado con anterioridad")
-    except Exception as e:
-        bot.reply_to(message, f"Algo terrible sucedió: {e}")
+
+    if not message.text.isdigit():
+        markup = ForceReply()
+        mensaje = bot.send_message(message.chat.id, 'Error: El telefono debe ser numerico\n.' , reply_markup=markup)
+        bot.register_next_step_handler(mensaje, save_mechanic)
+    else:
+        try:
+            print(message)
+            mechanic = int(message.text)
+            success_transaction = logic.register_mechanic(
+                message.chat.id, mechanic)
+            if (success_transaction):
+                bot.reply_to(message, f"Mecanico agregado exitosamente")
+            else:
+                bot.reply_to(
+                    message, f"El mecanico ya ha sido agregado con anterioridad")
+        except Exception as e:
+            bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
 
 # Registrar Owner
@@ -225,6 +254,120 @@ def with_check_fluids():
 
 def check_fluids(message):
     print(message.text)
+
+
+
+# 4 Consultar historico de revisiones de vehiculo ################################################
+@bot.message_handler(commands=['consult_reviews'])
+def consult_vehicle_information(message):
+    markup = ForceReply()
+    response = bot.reply_to(message, "ingrese la placa del vehiculo", reply_markup=markup)
+    bot.register_next_step_handler(response, consult_reviews)
+
+def consult_reviews(message):
+    try:
+        print(message)
+        placa_vehiculo = message.text
+        revisiones = logic.consultar_revisiones_vehiculo(
+             placa_vehiculo)
+        print("Revision? ", revisiones)
+        if (revisiones):
+            texto = ''
+            for review in revisiones:
+                print(" ")
+                print("Entra --> revisiones.description: " + review.description)
+                texto += '\n'
+                texto += f'Datos revisiones:\n'
+                texto += f'<code>Id</code> {review.id}\n'
+                texto += f'<code>Descripcion</code> {review.description}\n'
+                texto += f'<code>Fecha</code> {review.date}\n'
+        
+            markup = ReplyKeyboardRemove()
+            bot.send_message(message.chat.id, texto, parse_mode="html", reply_markup=markup)
+            
+            
+        else:
+            print("no entra null")
+            bot.reply_to(
+                message, f"El Seguro ya ha sido agregado con anterioridad")
+    except Exception as e:
+        bot.reply_to(message, f"Algo terrible sucedió: {e}")
+
+# 5 Registrar seguros vehiculo  ##################################################################
+@bot.message_handler(commands=['register_insurarse'])
+def register_insurarse(message):
+    markup = ForceReply()
+    response = bot.reply_to(message, "ingrese en numero el año de vigencia del SOAT", reply_markup=markup)
+    bot.register_next_step_handler(response, ingresar_id_vehiculo)
+
+def ingresar_id_vehiculo(message):
+    if not message.text.isdigit():
+        markup = ForceReply()
+        msj = bot.send_message(message.chat.id, 'Error: debe digitar un numero\n.')
+        bot.register_next_step_handler(msj, ingresar_id_vehiculo)
+    else:
+        insurance_temp[message.chat.id] = {}
+        insurance_temp[message.chat.id]["validity"] = int(message.text)
+
+        markup = ForceReply()
+        response = bot.reply_to(message, "ingrese la placa del vehiculo", reply_markup=markup)
+        bot.register_next_step_handler(response, save_register_insurarse)
+
+
+# 5.1 Guardar seguros vehiculos
+def save_register_insurarse(message):
+
+    insurance_temp[message.chat.id]["vehicle"] = message.text
+    try:
+        print(message)
+        success_transaction = logic.register_vehicle_insurarse(
+             insurance_temp[message.chat.id]["validity"],
+             insurance_temp[message.chat.id]["vehicle"])
+        if (success_transaction):
+            bot.reply_to(message, f"Seguro ingresado correctamente")
+        else:
+             bot.reply_to(
+                message, f"El Seguro ya ha sido agregado con anterioridad")
+    except Exception as e:
+        bot.reply_to(message, f"Algo terrible sucedió: {e}")
+
+
+
+
+# 6 Consultar datos de un vehiculo ##################################################################
+@bot.message_handler(commands=['consult_vehicle_information'])
+def consult_vehicle_information(message):
+    markup = ForceReply()
+    response = bot.reply_to(message, "Digite la placa del vehiculo", reply_markup=markup)
+    bot.register_next_step_handler(response, informacion_vehiculo)
+
+def informacion_vehiculo(message):
+    try:
+        print(message)
+        placa_vehiculo = message.text
+        informacion_vehiculo = logic.consultar_informacion_vehiculo(
+             placa_vehiculo)
+        print("Informacion_vehiculo? ", informacion_vehiculo)
+        if (informacion_vehiculo):
+            texto = '\n'
+            texto += f'Información Vehiculo:\n'
+            texto += f'<code>Id</code> {informacion_vehiculo.id}\n'
+            texto += f'<code>Modelo</code> {informacion_vehiculo.model}\n'
+            texto += f'<code>Marca</code> {informacion_vehiculo.mark}\n'
+            texto += f'<code>Email propietario</code> {informacion_vehiculo.owner.email}\n'
+        
+            markup = ReplyKeyboardRemove()
+            bot.send_message(message.chat.id, texto, parse_mode="html", reply_markup=markup)
+            
+            
+        else:
+            print("no entra null")
+            bot.reply_to(
+                message, f"No existe información de la placa ingresa")
+    except Exception as e:
+        bot.reply_to(message, f"Algo terrible sucedió: {e}")
+
+
 
 # Default response
 @bot.message_handler(func=lambda message: True)

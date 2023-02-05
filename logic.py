@@ -72,3 +72,42 @@ def register_vehicle(id, model, mark, id_owner):
         return "Vehículo registrado exitosamente."
     return "El owner no exite. Debes primero registrar este."
 
+
+#Registrar seguro de vehiculo
+def register_vehicle_insurarse(validity, vehicle_id):
+    print(validity)
+    print(vehicle_id)
+    vehicle = db.session.query(Vehicle).get(vehicle_id)
+    db.session.commit()
+
+    if (vehicle):
+        insurance = Insurance(
+            validity,
+            vehicle)
+        db.session.add(insurance)
+        db.session.commit()
+        return "Seguro de vehiculo registrado con exito"
+    return "El vehiculo no se encuentra registrado"
+
+
+
+# Metodo que consulta las revisiones de un vehiculo
+def consultar_revisiones_vehiculo(vehicle_id):
+    vehicle: Vehicle = db.session.query(Vehicle).get(vehicle_id)
+    db.session.commit()
+    if(vehicle):
+        if(vehicle.reviews):
+            return vehicle.reviews
+        else:
+            return "El vehiculo no tiene revisiones."
+    else:
+         return "El vehiculo no existe."
+
+
+def consultar_informacion_vehiculo(vehicle_id):
+    vehicle: Vehicle = db.session.query(Vehicle).get(vehicle_id)
+    db.session.commit()
+    if(vehicle):
+        return vehicle
+    else:
+         return "El vehiculo no existe."
