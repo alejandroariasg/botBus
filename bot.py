@@ -165,11 +165,15 @@ def save_owner(message):
     except Exception as e:
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
-#Registrar Vehiculo
+# Registrar Vehiculo
+
+
 @bot.message_handler(commands=['register_vehicle'])
+@auth_middleware(user_types=['owner'])
 def on_command_imc(message):
     response = bot.reply_to(message, "Ingrese la placa del vehiculo")
     bot.register_next_step_handler(response, vehicle_id)
+
 
 def vehicle_id(message):
     response = bot.reply_to(
@@ -190,6 +194,7 @@ def vehicle_mark(message):
         message, "Ingrese el ID del owner")
     record.vehicle["mark"] = message.text
     bot.register_next_step_handler(response, vehicle_owner)
+
 
 def vehicle_owner(message):
     record.vehicle["id_owner"] = int(message.text)
@@ -224,11 +229,12 @@ def review_spare_parts(message):
 
 def review_vehicle(message):
     record.review["vehicle_id"] = message.text
-    record.review["user_id"] = message.chat.id
     try:
-        is_success_transaction = logic.register_review(**record.review)
-        if (is_success_transaction):
-            markup = with_check_fluids()
+        record.review.pop('id')
+        transaction = logic.register_review(**record.review)
+        if (transaction):
+            markup = check_fluids_actions()
+            record.review['id'] = transaction.id
             response = bot.reply_to(
                 message,
                 "Se ha registrado la revision con exito, desea agregar revision de liquidos?",
@@ -243,17 +249,61 @@ def review_vehicle(message):
         bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
 
-
-def with_check_fluids():
+def check_fluids_actions():
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     itembtn1 = types.KeyboardButton('Si')
     itembtn2 = types.KeyboardButton('No')
     markup.add(itembtn1, itembtn2)
-
     return markup
 
+
 def check_fluids(message):
-    print(message.text)
+    if (message.text == "Si"):
+        response = bot.reply_to(
+            message, "Ingrese el nivel de aceite")
+
+        bot.register_next_step_handler(response, check_oil_level)
+
+
+def check_oil_level(message):
+    record.fluid_check['oil_level'] = message.text
+    response = bot.reply_to(
+        message, "Ingrese el nivel de liquido de frenos")
+
+    bot.register_next_step_handler(response, check_brake_fluid_level)
+
+
+def check_brake_fluid_level(message):
+    record.fluid_check['brake_fluid_level'] = message.text
+    response = bot.reply_to(
+        message, "Ingrese el nivel de refrigerante")
+
+    bot.register_next_step_handler(response, check_coolant_level)
+
+
+def check_coolant_level(message):
+    record.fluid_check['coolant_level'] = message.text
+    response = bot.reply_to(
+        message, "Ingrese el nivel de liquido de direccion")
+
+    bot.register_next_step_handler(response, check_steering_fluid_level)
+
+
+def check_steering_fluid_level(message):
+    record.fluid_check['steering_fluid_level'] = message.text
+    try:
+        transaction = logic.register_fluid_check(
+            review_id=record.review['id'], **record.fluid_check)
+        print(message)
+        if (transaction):
+            bot.send_message(
+                message.chat.id, "Se ha registrado la revision de liquidos")
+        else:
+            bot.send_message(
+                message.chat.id, "Ocurrio un error")
+
+    except Exception as e:
+        bot.reply_to(message, f"Algo terrible sucedió: {e}")
 
 
 
@@ -370,6 +420,8 @@ def informacion_vehiculo(message):
 
 
 # Default response
+
+
 @bot.message_handler(func=lambda message: True)
 def on_fallback(message):
     bot.send_chat_action(message.chat.id, 'typing')

@@ -9,6 +9,8 @@ from record import Record
 record = Record()
 
 # Authentication
+
+
 def login_user(user_id):
     mechanic = db.session.query(Mechanic).get(user_id)
     db.session.commit()
@@ -46,6 +48,8 @@ def register_owner(user_id, email):
         return True
     return False
 
+# review
+
 
 def register_review(description, spare_parts, vehicle_id):
     mechanic = db.session.query(Mechanic).get(record.user.id)
@@ -60,12 +64,34 @@ def register_review(description, spare_parts, vehicle_id):
             mechanic)
         db.session.add(review)
         db.session.commit()
-        return True
+        return review
     return False
+
+
+def register_fluid_check(
+        review_id,
+        oil_level,
+        brake_fluid_level,
+        coolant_level,
+        steering_fluid_level
+):
+    print(review_id, "jsdhdksjhdskjsdhdskjsdhjkdshdsjkdshdsjkhskjdhs")
+    review = db.session.query(Review).get(review_id)
+    db.session.commit()
+
+    if (review):
+        fluid_check = FluidCheck(
+            oil_level, brake_fluid_level, coolant_level, steering_fluid_level, review)
+        db.session.add(review)
+        db.session.commit()
+        return fluid_check
+    return False
+    # vehicle
+
 
 def register_vehicle(id, model, mark, id_owner):
     owner = db.session.query(Owner).get(id_owner)
-    if(owner):    
+    if (owner):
         vehicle = Vehicle(id, model, mark, id_owner)
         db.session.add(vehicle)
         db.session.commit()

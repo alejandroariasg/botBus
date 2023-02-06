@@ -16,19 +16,17 @@ class FluidCheck(db.Base):
 
     def __init__(
         self,
-        id,
         oil_level,
         brake_fluid_level,
         coolant_level,
         steering_fluid_level,
-        maintenance_id
+        review
     ):
-        self.id = id
         self.oil_level = oil_level
         self.brake_fluid_level = brake_fluid_level
         self.coolant_level = coolant_level
         self.steering_fluid_level = steering_fluid_level
-        self.maintenance_id = maintenance_id
+        self.review = review
 
     def __repr__(self):
         return f"<FluidCheck {self.id}>"

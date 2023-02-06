@@ -6,9 +6,17 @@ class Record():
     user: Owner | Mechanic = None
     user_type = None
     review = {
+        'id': None,
         'description': None,
         'vehicle_id': None,
         'spare_parts': None,
+    }
+
+    fluid_check = {
+        'oil_level': None,
+        'brake_fluid_level': None,
+        'coolant_level': None,
+        'steering_fluid_level': None,
     }
 
     vehicle = {
